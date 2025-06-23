@@ -127,7 +127,7 @@ exports.updateUser = async (req, res, next) => {
 
     const validPlans = ['free', 'pro', 'premium'];
     const validRoles = ['student', 'admin'];
-    
+
     if (plan && !validPlans.includes(plan)) {
       return res.status(400).json({
         success: false,
@@ -225,13 +225,11 @@ exports.googleAuthCallback = (req, res, next) => {
     }
 
     const token = jwt.sign({ id: user._id }, config.JWT_SECRET, { expiresIn: '1d' });
-    const redirectUrl = `${
-      process.env.FRONTEND_URL || 'http://localhost:5173'
-    }/auth/callback?token=${token}&id=${user._id}&name=${encodeURIComponent(
-      user.name
-    )}&email=${encodeURIComponent(user.email)}&role=${user.role}&plan=${
-      user.plan
-    }`;
+    const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'
+      }/auth/callback?token=${token}&id=${user._id}&name=${encodeURIComponent(
+        user.name
+      )}&email=${encodeURIComponent(user.email)}&role=${user.role}&plan=${user.plan
+      }`;
     res.redirect(redirectUrl);
   })(req, res, next);
 };
@@ -300,6 +298,93 @@ exports.getUsersByPlans = async (req, res, next) => {
     });
   } catch (error) {
     console.error('Error in getUsersByPlans:', error);
+    next(error);
+  }
+};
+
+
+// @desc    Get revenue summary by subscription plan (admin only)
+// @route   GET /api/auth/users/resumen-plan
+// @access  Private/Admin
+exports.getUsersByResumenPlans = async (req, res, next) => {
+  try {
+    // Definir los precios mensuales de cada plan
+    const planPrices = {
+      free: 0,
+      pro: 9,    // $9/mes
+      premium: 29 // $29/mes
+    };
+
+    // Obtener estadísticas de usuarios por plan
+    const plans = await User.aggregate([
+      {
+        $group: {
+          _id: '$plan',
+          userCount: { $sum: 1 },
+          activeUsers: { $sum: 1 } // Todos activos por ahora
+        }
+      },
+      {
+        $addFields: {
+          plan: '$_id',
+          monthlyRevenue: {
+            $switch: {
+              branches: [
+                { case: { $eq: ['$_id', 'free'] }, then: { $multiply: ['$userCount', planPrices.free] } },
+                { case: { $eq: ['$_id', 'pro'] }, then: { $multiply: ['$userCount', planPrices.pro] } },
+                { case: { $eq: ['$_id', 'premium'] }, then: { $multiply: ['$userCount', planPrices.premium] } }
+              ],
+              default: 0
+            }
+          }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          plan: 1,
+          userCount: 1,
+          activeUsers: 1,
+          activePercentage: 100, // Todos son activos
+          monthlyRevenue: 1
+        }
+      },
+      {
+        $sort: { monthlyRevenue: -1 }
+      }
+    ]);
+
+    // Calcular totales
+    const totalUsers = plans.reduce((sum, plan) => sum + plan.userCount, 0);
+    const totalActiveUsers = totalUsers;
+    const totalMonthlyRevenue = plans.reduce((sum, plan) => sum + plan.monthlyRevenue, 0);
+
+    // Formatear respuesta para visualización
+    const result = {
+      plans,
+      summary: {
+        totalUsers,
+        totalActiveUsers,
+        totalMonthlyRevenue,
+        avgActivePercentage: 100,
+        monthlyRecurringRevenue: totalMonthlyRevenue * 12
+      },
+      chartData: {
+        labels: plans.map(p => p.plan.toUpperCase()),
+        userCounts: plans.map(p => p.userCount),
+        revenues: plans.map(p => p.monthlyRevenue),
+        activeUsers: plans.map(p => p.userCount),
+        colors: ['#4CAF50', '#2196F3', '#FFC107'],
+        prices: planPrices
+      }
+    };
+
+    res.status(200).json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    console.error('Error in getUsersByResumenPlans:', error);
     next(error);
   }
 };
