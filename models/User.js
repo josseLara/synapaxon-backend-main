@@ -41,6 +41,26 @@ const UserSchema = new mongoose.Schema({
     enum: ['student'],
     default: 'student'
   },
+  stripeCustomerId: {
+    type: String,
+    default: null
+  },
+  subscriptionId: {
+    type: String,
+    default: null
+  },
+  subscriptionStatus: {
+    type: String,
+    default: null
+  },
+  subscriptionStartDate: {
+    type: Date,
+    default: null
+  },
+  subscriptionEndDate: {
+    type: Date,
+    default: null
+  },
   plan: {
     type: String,
     enum: ['free', 'pro', 'premium'],
@@ -72,7 +92,7 @@ UserSchema.pre('save', async function (next) {
 });
 
 // Plan user
-UserSchema.statics.getLimitsByPlan = function(plan) {
+UserSchema.statics.getLimitsByPlan = function (plan) {
   const limits = {
     free: {
       aiUsageLimit: 5,
@@ -90,7 +110,7 @@ UserSchema.statics.getLimitsByPlan = function(plan) {
       agentLimit: 50
     }
   };
-  
+
   return limits[plan] || limits.free;
 };
 // Sign JWT and return

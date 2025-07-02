@@ -16,6 +16,7 @@ const testRoutes = require('./routes/tests');
 const uploadRoutes = require('./routes/uploads');
 const studentQuestionRoutes = require('./routes/studentQuestions');
 const apiAiRoutes = require('./routes/aiRoutes')
+const subscriptionRoutes = require('./routes/subscriptionRoutes')
 const app = express();
 
 // Connect to database
@@ -44,8 +45,9 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+app.use('/api/subscriptions/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
-app.use(passport.initialize());
+app.use(express.urlencoded({ extended: true }));
 require('./config/passport'); // Load Passport configuration
 
 // Routes
@@ -55,6 +57,7 @@ app.use('/api/tests', testRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/student-questions', studentQuestionRoutes);
 app.use('/api/ai',apiAiRoutes)
+app.use('/api/subscriptions', subscriptionRoutes)
 app.use(errorHandler);
 
 const PORT = config.PORT || 9000;
