@@ -45,7 +45,7 @@ async function initializeStripeProducts() {
     if (!proPrice) {
       proPrice = await stripe.prices.create({
         product: proProduct.id,
-        unit_amount: 999, // $9.99
+        unit_amount: 900, // $9.99
         currency: 'usd',
         recurring: { interval: 'month' },
       })
@@ -68,7 +68,7 @@ async function initializeStripeProducts() {
     if (!premiumPrice) {
       premiumPrice = await stripe.prices.create({
         product: premiumProduct.id,
-        unit_amount: 1999, // $19.99
+        unit_amount: 2900, // $19.99
         currency: 'usd',
         recurring: { interval: 'month' },
       })
