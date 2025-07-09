@@ -24,9 +24,15 @@ router.get('/validate-limit-ai', protect, async (req, res, next) => {
     // }
 
     // Incrementar el contador de uso
+    // const updatedUser = await User.findByIdAndUpdate(
+    //   req.user.id,
+    //   { $inc: { aiUsageCount: 1 } },
+    //   { new: true }
+    // );
+
     const updatedUser = await User.findByIdAndUpdate(
       req.user.id,
-      { $inc: { aiUsageCount: 1 } },
+      { aiUsageCount: 0 },
       { new: true }
     );
 
