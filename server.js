@@ -36,6 +36,7 @@ const corsOptions = {
     'https://synapaxon.com',
     'http://synapaxon-backend-sigma.vercel.app',
     'https://synapaxon-backend-sigma.vercel.app',
+    'https://synapaxon.com/'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
