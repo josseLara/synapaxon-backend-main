@@ -24,25 +24,33 @@ connectDB();
 
 // Middleware
 const corsOptions = {
-  origin: [
-    'https://synapaxon-frontend.onrender.com',
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'http://localhost:8000',
-    'https://synapaxon-backend.onrender.com',
-    'https://synapaxon-frontend-main.vercel.app',
-    'https://synapaxon-backend-main.vercel.app',
-    'http://synapaxon.com',
-    'https://synapaxon.com',
-    'http://synapaxon-backend-sigma.vercel.app',
-    'https://synapaxon-backend-sigma.vercel.app',
-    'https://synapaxon.com/'
-  ],
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      'https://synapaxon-frontend.onrender.com',
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'http://localhost:8000',
+      'https://synapaxon-backend.onrender.com',
+      'https://synapaxon-frontend-main.vercel.app',
+      'https://synapaxon-backend-main.vercel.app',
+      'http://synapaxon.com',
+      'https://synapaxon.com',
+      'http://synapaxon-backend-sigma.vercel.app',
+      'https://synapaxon-backend-sigma.vercel.app',
+    ];
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  credentials: true,
-  optionsSuccessStatus: 200 // Algunos navegadores pueden tener problemas con 204
+  optionsSuccessStatus: 200
 };
+
 
 app.use(cors(corsOptions));
 app.use('/api/subscriptions/webhook', express.raw({ type: 'application/json' }));
