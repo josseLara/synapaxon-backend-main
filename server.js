@@ -38,10 +38,9 @@ const corsOptions = {
     'https://synapaxon-backend-sigma.vercel.app',
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   credentials: true,
-  preflightContinue: false, // Importante para Vercel
-  optionsSuccessStatus: 204
+  optionsSuccessStatus: 200 // Algunos navegadores pueden tener problemas con 204
 };
 
 app.use(cors(corsOptions));
@@ -56,7 +55,7 @@ app.use('/api/questions', questionRoutes);
 app.use('/api/tests', testRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/student-questions', studentQuestionRoutes);
-app.use('/api/ai',apiAiRoutes)
+app.use('/api/ai', apiAiRoutes)
 app.use('/api/subscriptions', subscriptionRoutes)
 app.use(errorHandler);
 

@@ -16,23 +16,17 @@ router.get('/validate-limit-ai', protect, async (req, res, next) => {
     }
 
     // Verificar si ha alcanzado el límite diario
-    // if (user.aiUsageCount >= user.aiUsageLimit) {
-    //   return res.status(429).json({
-    //     success: false,
-    //     error: `Has alcanzado tu límite diario de uso de IA (${user.aiUsageLimit}). Por favor actualiza tu plan o intenta nuevamente mañana.`
-    //   });
-    // }
+    if (user.aiUsageCount >= user.aiUsageLimit) {
+      return res.status(429).json({
+        success: false,
+        error: `Has alcanzado tu límite diario de uso de IA (${user.aiUsageLimit}). Por favor actualiza tu plan o intenta nuevamente mañana.`
+      });
+    }
 
     // Incrementar el contador de uso
-    // const updatedUser = await User.findByIdAndUpdate(
-    //   req.user.id,
-    //   { $inc: { aiUsageCount: 1 } },
-    //   { new: true }
-    // );
-
     const updatedUser = await User.findByIdAndUpdate(
       req.user.id,
-      { aiUsageCount: 0 },
+      { $inc: { aiUsageCount: 1 } },
       { new: true }
     );
 
