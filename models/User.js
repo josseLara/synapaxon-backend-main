@@ -74,6 +74,10 @@ const UserSchema = new mongoose.Schema({
     type: Number,
     default: 5 // Puedes ajustar según el plan
   },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
   createdAt: {
     type: Date,
     default: Date.now

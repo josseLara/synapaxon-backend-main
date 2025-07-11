@@ -54,7 +54,12 @@ exports.login = async (req, res, next) => {
         message: 'Invalid credentials'
       });
     }
-
+    if (user?.isActive != undefined && user?.isActive == false) {
+      return res.status(401).json({
+        success: false,
+        message: "Access denied. This user account is not active."
+      });
+    }
     const isMatch = await user.matchPassword(password);
     if (!isMatch) {
       return res.status(401).json({
@@ -108,7 +113,7 @@ exports.getAllUsers = async (req, res, next) => {
 // @access  Private/Admin
 exports.updateUser = async (req, res, next) => {
   try {
-    const { plan, role } = req.body;
+    const { plan, role,isActive } = req.body;
     const { id } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -152,7 +157,7 @@ exports.updateUser = async (req, res, next) => {
 
     if (plan) user.plan = plan;
     if (role) user.role = role;
-
+    if(isActive) user.isActive = true;
     await user.save();
 
     res.status(200).json({

@@ -17,6 +17,7 @@ const uploadRoutes = require('./routes/uploads');
 const studentQuestionRoutes = require('./routes/studentQuestions');
 const apiAiRoutes = require('./routes/aiRoutes')
 const subscriptionRoutes = require('./routes/subscriptionRoutes')
+const userRoutes = require('./routes/userRoutes');
 const app = express();
 
 // Connect to database
@@ -25,6 +26,9 @@ connectDB();
 // Middleware
 const corsOptions = {
   origin: function (origin, callback) {
+    // Permitir solicitudes sin origen (como webhooks de Stripe)
+    if (!origin) return callback(null, true);
+
     const allowedOrigins = [
       'https://synapaxon-frontend.onrender.com',
       'http://localhost:3000',
@@ -51,6 +55,14 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 
+// Aplicar CORS a todas las rutas excepto al webhook de Stripe
+app.use((req, res, next) => {
+  if (req.path === '/api/subscriptions/webhook') {
+    next();
+  } else {
+    cors(corsOptions)(req, res, next);
+  }
+});
 
 app.use(cors(corsOptions));
 app.use('/api/subscriptions/webhook', express.raw({ type: 'application/json' }));
@@ -60,6 +72,7 @@ require('./config/passport'); // Load Passport configuration
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/questions', questionRoutes);
 app.use('/api/tests', testRoutes);
 app.use('/api/uploads', uploadRoutes);
