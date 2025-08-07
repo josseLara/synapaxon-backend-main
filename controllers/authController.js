@@ -196,6 +196,22 @@ exports.login = async (req, res, next) => {
 exports.getMe = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
+    const planId = user.plan; // Asumiendo que el campo se llama 'plan'
+
+    switch (planId) {
+      case 'premium':
+        user.aiUsageLimit = 50;
+        break;
+      case 'pro':
+        user.aiUsageLimit = 20;
+        break;
+      default:
+        user.aiUsageLimit = 5;
+        break;
+    }
+
+    await user.save();
+
     res.status(200).json({
       success: true,
       data: user

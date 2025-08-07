@@ -181,7 +181,7 @@ router.post('/switch-to-free', protect, async (req, res) => {
 
     // Actualizar usuario a plan free
     user.plan = 'free'
-    // user.aiUsageLimit = 5 // Asignar límite de uso para el plan free
+    user.aiUsageLimit = 5 // Asignar límite de uso para el plan free
     user.subscriptionStatus = null
     await user.save()
 
@@ -247,6 +247,12 @@ async function handleCheckoutCompleted(session) {
   // Si es premium y no tiene código de referido, generarlo
   if (planId === 'premium' && !user.referralCode) {
     user.referralCode = generateReferralCode(user.email);
+  }
+  if(planId === 'premium'){
+     user.aiUsageLimit = 50
+  }
+  if (planId === 'pro' ) {
+    user.aiUsageLimit = 20
   }
 
   await user.save();

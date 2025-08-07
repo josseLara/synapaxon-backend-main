@@ -125,13 +125,13 @@ UserSchema.statics.getLimitsByPlan = function (plan) {
       agentLimit: 5
     },
     pro: {
-      aiUsageLimit: 50,
-      uploadLimit: 50,
+      aiUsageLimit: 20,
+      uploadLimit: 20,
       agentLimit: 20
     },
     premium: {
-      aiUsageLimit: 100,
-      uploadLimit: 100,
+      aiUsageLimit: 50,
+      uploadLimit: 50,
       agentLimit: 50
     }
   };
