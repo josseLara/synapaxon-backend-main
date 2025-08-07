@@ -78,6 +78,27 @@ const UserSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  referralCode: {
+    type: String,
+    unique: true,
+    sparse: true // permite que no todos los usuarios lo tengan
+  },
+  referredBy: {
+    type: String, // guarda el código que usó este usuario al registrarse
+    default: null
+  },
+  referralCount: {
+    type: Number,
+    default: 0
+  },
+  freeMonthsEarned: {
+    type: Number,
+    default: 0
+  },
+  nextBillingCycle: {
+    type: Date,
+    default: null
+  },
   createdAt: {
     type: Date,
     default: Date.now

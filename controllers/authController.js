@@ -3,13 +3,15 @@ const passport = require('passport');
 const jwt = require('jsonwebtoken');
 const config = require('../config/config');
 const mongoose = require('mongoose');
+const stripe = require('stripe')(process.env.STRIPE_KEY)
 
 // @desc    Register student
 // @route   POST /api/auth/register
 // @access  Public
+// @desc    Register student
 exports.register = async (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, referralCode } = req.body;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -19,16 +21,129 @@ exports.register = async (req, res, next) => {
       });
     }
 
+    // Crear el usuario
     const user = await User.create({
       name,
       email,
       password,
-      role: 'student'
+      role: 'student',
+      referredBy: referralCode || null
     });
+
+    // Si usó un código de referido válido, actualizar el referidor
+    if (referralCode) {
+      await handleReferralUsage(referralCode);
+    }
 
     sendTokenResponse(user, 201, res);
   } catch (error) {
     console.error('Error in register:', error);
+    next(error);
+  }
+};
+
+// Función mejorada para manejar referidos
+async function handleReferralUsage(referralCode) {
+  try {
+    const referrer = await User.findOne({
+      referralCode,
+      plan: "premium",
+      isActive: true
+    });
+
+    if (!referrer) {
+      console.log(`Código de referido inválido o usuario no premium: ${referralCode}`);
+      return;
+    }
+
+    // Incrementar el contador de referidos de forma atómica
+    const updatedUser = await User.findOneAndUpdate(
+      { _id: referrer._id },
+      { $inc: { referralCount: 1 } },
+      { new: true }
+    );
+
+    // Verificar si alcanzó 10 referidos
+    if (updatedUser.referralCount >= 10) {
+      await applyFreeMonthReward(updatedUser._id);
+    }
+
+  } catch (error) {
+    console.error('Error in handleReferralUsage:', error);
+    // No re-lanzamos el error para no afectar el registro principal
+  }
+}
+
+// Función para aplicar el mes gratis
+async function applyFreeMonthReward(userId) {
+  try {
+    const user = await User.findById(userId);
+    if (!user) throw new Error('Usuario no encontrado');
+
+    user.freeMonthsEarned += 1;
+    user.referralCount = 0;
+
+    if (user.subscriptionStatus === 'active' && user.stripeCustomerId) {
+      const subscriptions = await stripe.subscriptions.list({
+        customer: user.stripeCustomerId,
+        status: 'active',
+        limit: 1
+      });
+
+      if (subscriptions.data.length > 0) {
+        const subscription = subscriptions.data[0];
+
+        // Crea el cupón (una sola vez en producción, o reusalo)
+        const coupon = await stripe.coupons.create({
+          duration: 'once',
+          percent_off: 100
+        });
+
+        // ✅ Aplica el cupón con el campo `discounts`
+        await stripe.subscriptions.update(subscription.id, {
+          discounts: [{
+            coupon: coupon.id
+          }]
+        });
+
+        console.log(`✅ Cupón aplicado correctamente a la suscripción: ${subscription.id}`);
+      } else {
+        console.log('⚠️ No se encontró una suscripción activa para este usuario');
+      }
+    }
+
+    await user.save();
+    console.log(`🎉 Se ha aplicado 1 mes gratis al usuario ${user.email}`);
+  } catch (error) {
+    console.error('❌ Error al aplicar el mes gratis:', error.message || error);
+  }
+}
+
+// @desc    Verify referral code
+// @route   GET /api/auth/verify-referral/:code
+// @access  Public
+exports.verifyReferral = async (req, res, next) => {
+  try {
+    const { code } = req.params;
+
+    const referrer = await User.findOne({
+      referralCode: code,
+      plan: "premium"
+    });
+
+    if (!referrer) {
+      return res.status(404).json({
+        success: false,
+        message: 'Invalid referral code or referrer is not premium'
+      });
+    }
+
+    res.json({
+      success: true,
+      referrerName: referrer.name
+    });
+  } catch (error) {
+    console.error('Error verifying referral:', error);
     next(error);
   }
 };
@@ -113,7 +228,7 @@ exports.getAllUsers = async (req, res, next) => {
 // @access  Private/Admin
 exports.updateUser = async (req, res, next) => {
   try {
-    const { plan, role,isActive } = req.body;
+    const { plan, role, isActive } = req.body;
     const { id } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -157,7 +272,7 @@ exports.updateUser = async (req, res, next) => {
 
     if (plan) user.plan = plan;
     if (role) user.role = role;
-    if(isActive) user.isActive = true;
+    if (isActive) user.isActive = true;
     await user.save();
 
     res.status(200).json({

@@ -181,7 +181,7 @@ router.post('/switch-to-free', protect, async (req, res) => {
 
     // Actualizar usuario a plan free
     user.plan = 'free'
-    user.aiUsageLimit = 5 // Asignar límite de uso para el plan free
+    // user.aiUsageLimit = 5 // Asignar límite de uso para el plan free
     user.subscriptionStatus = null
     await user.save()
 
@@ -235,16 +235,29 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 
 // Resto de las funciones helper (handleCheckoutCompleted, handleSubscriptionDeleted, etc.)
 async function handleCheckoutCompleted(session) {
-  const customerId = session.customer
-  const planId = session.metadata.planId
+  const customerId = session.customer;
+  const planId = session.metadata.planId;
 
-  const user = await User.findOne({ stripeCustomerId: customerId })
-  if (!user) return
+  const user = await User.findOne({ stripeCustomerId: customerId });
+  if (!user) return;
 
-  user.plan = planId
-  user.aiUsageLimit = planId === 'pro' ? 50 : planId === 'premium' ? 100 : 5; // Ejemplo de límites
-  user.subscriptionStatus = 'active'
-  await user.save()
+  user.plan = planId;
+  user.subscriptionStatus = 'active';
+
+  // Si es premium y no tiene código de referido, generarlo
+  if (planId === 'premium' && !user.referralCode) {
+    user.referralCode = generateReferralCode(user.email);
+  }
+
+  await user.save();
+}
+
+// Función para generar código de referido único
+function generateReferralCode(email) {
+  // Usamos parte del email + timestamp para hacerlo único
+  const prefix = email.split('@')[0].substring(0, 4).toUpperCase();
+  const timestamp = Date.now().toString().slice(-4);
+  return `${prefix}${timestamp}`;
 }
 
 async function handleSubscriptionDeleted(subscription) {
