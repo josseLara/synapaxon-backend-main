@@ -7,7 +7,7 @@ const passport = require('./config/passport');
 const config = require('./config/config');
 const connectDB = require('./config/db');
 const errorHandler = require('./utils/errorHandler');
-const resetLimitIa = require('./utils/resetAiUsage');
+const startResetCron = require('./utils/resetAiUsage');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -80,6 +80,8 @@ app.use('/api/student-questions', studentQuestionRoutes);
 app.use('/api/ai', apiAiRoutes)
 app.use('/api/subscriptions', subscriptionRoutes)
 app.use(errorHandler);
+
+startResetCron();
 
 const PORT = config.PORT || 9000;
 

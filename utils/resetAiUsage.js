@@ -13,7 +13,7 @@ async function resetDailyCounters() {
       { $set: { aiUsageCount: 0 } }
     );
 
-    console.log(`[${new Date().toISOString()}] Reset AI counters for ${result.nModified} users`);
+    console.log(`[${new Date().toISOString()}] Reset AI counters for ${result.modifiedCount} users`);
   } catch (error) {
     console.error('Error resetting counters:', error);
   } finally {
@@ -21,9 +21,15 @@ async function resetDailyCounters() {
   }
 }
 
-cron.schedule('0 0 * * *', () => {
-  console.log('Running daily reset...');
-  resetDailyCounters();
-});
+function startResetCron() {
+  console.log('Initializing daily AI usage reset cron...');
+  cron.schedule('0 0 * * *', () => {
+    console.log(`[${new Date().toLocaleString('en-US', { timeZone: 'America/New_York' })}] Running daily reset...`);
+    resetDailyCounters();
+  }, {
+    timezone: 'America/New_York' // Ajusta según la zona del cliente
+  });
+}
 
-// resetDailyCounters();
+resetDailyCounters()
+module.exports = startResetCron;
