@@ -31,5 +31,5 @@ function startResetCron() {
   });
 }
 
-resetDailyCounters()
+// resetDailyCounters()
 module.exports = startResetCron;
